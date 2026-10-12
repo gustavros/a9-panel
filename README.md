@@ -11,17 +11,23 @@ always available in the tray and without a browser.
   and verifies by reading back. **Undo** restores the last change.
 - No firmware updates, on purpose.
 
-## Build
+## Download
 
-Requirements: Windows, Rust (MSVC toolchain), Python 3 (only to fetch the assets).
+Grab `a9-panel-vX.Y.Z-windows-x64.exe` from the [Releases](../../releases) page and run it. No installer, no Rust needed.
+
+- Close ATK Hub in the browser first: it holds the receiver.
+- On the first launch the app downloads the mouse picture and the OPPO Sans font (about 10 MB) from the ATK Hub CDN
+  and keeps them in `%APPDATA%\a9-panel\assets`.
+- The `.exe` is not code-signed, so Windows SmartScreen may warn the first time: click **More info → Run anyway**.
+
+## Build from source
+
+Requirements: Windows and Rust with the MSVC toolchain.
 
 ```powershell
-.\scripts\fetch-assets.ps1   # downloads the mouse image and the font used by ATK Hub
 cargo build --release
 target\release\a9-panel.exe
 ```
-
-Close ATK Hub in the browser before using the app: it holds the receiver.
 
 Command line options:
 
@@ -30,6 +36,8 @@ Command line options:
 | `--tray` | start hidden in the tray |
 | `--dump` | read everything from the mouse into `%APPDATA%\a9-panel\dump.txt` and exit (read-only) |
 | `--page=N --shot=file.bmp` | open off-screen on page N, save a screenshot and exit |
+
+Releases are built by GitHub Actions when a `v*` tag is pushed (`.github/workflows/release.yml`).
 
 ## How it works
 
@@ -43,8 +51,8 @@ some writes (buttons, macros, profiles, factory reset) still need more real-worl
 ## Credits and trademarks
 
 Independent project, not affiliated with or endorsed by ATK. "ATK" and "ATK Hub" are trademarks of their owners.
-The mouse image and the OPPO Sans font belong to their owners and are **not** included in this repository;
-`scripts/fetch-assets.ps1` downloads them on your machine.
+The mouse picture and the OPPO Sans font belong to their owners and are **not** included in this repository
+or in the `.exe`; the app downloads them on your machine.
 
 ## License
 
