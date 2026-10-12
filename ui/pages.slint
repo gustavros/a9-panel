@@ -1,0 +1,898 @@
+import { ScrollView } from "std-widgets.slint";
+import { Theme, Strong, Icon, HubButton, Segmented, VSegmented, Switch, HubSlider, NumberBox, TitleCard, ParamRow, PageTitle } from "components.slint";
+import { Store, DpiLevel, ButtonRow, MacroRow } from "store.slint";
+
+// ================= Buttons (Key Change Settings) =================
+
+// White card pointing at a button on the mouse drawing (the Hub's triple shadow condensed into one).
+component KeyLabel inherits Rectangle {
+    in property <string> caption;
+    in property <string> action;
+    in property <bool> open;
+    callback clicked();
+    height: 53px;
+    width: max(102px, max(cap.preferred-width, name.preferred-width) + 40px);
+    border-radius: 8px;
+    background: root.open ? #000000 : #ffffff;
+    drop-shadow-offset-y: 6px;
+    drop-shadow-blur: 16px;
+    drop-shadow-color: #0000001a;
+    animate background { duration: 150ms; }
+    VerticalLayout {
+        padding-left: 20px;
+        padding-right: 20px;
+        padding-top: 9px;
+        padding-bottom: 9px;
+        cap := Text { text: root.caption; color: root.open ? #ffffff80 : Theme.k30; font-size: 11px; }
+        name := Strong { text: root.action; color: root.open ? #ffffff : Theme.k85; font-size: 14px; font-weight: 700; }
+    }
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// Orange ring over the mouse button.
+component HotSpot inherits Rectangle {
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    border-width: 1.5px;
+    border-color: Theme.orange;
+    background: transparent;
+}
+
+export component ButtonsPage inherits Rectangle {
+    property <int> editing: -1;
+    // card and ring positions relative to the drawing (314x483), taken from the Hub screen
+    property <[{lx: length, ly: length, hx: length, hy: length}]> spots: [
+        { lx: -150px, ly: 20px, hx: 102px, hy: 50px },
+        { lx: 290px, ly: 150px, hx: 205px, hy: 80px },
+        { lx: 205px, ly: 65px, hx: 152px, hy: 92px },
+        { lx: -160px, ly: 225px, hx: 40px, hy: 250px },
+        { lx: -170px, ly: 140px, hx: 42px, hy: 175px },
+        { lx: 260px, ly: 265px, hx: 210px, hy: 290px },
+    ];
+
+    VerticalLayout {
+        padding: 24px;
+        Rectangle {
+            vertical-stretch: 1;
+            Rectangle {
+                width: 314px;
+                height: 483px;
+                x: (parent.width - self.width) / 2;
+                y: (parent.height - self.height) / 2;
+                Image {
+                    source: @image-url("assets/mouse.png");
+                    width: 100%;
+                    height: 100%;
+                    image-fit: contain;
+                }
+                for s[i] in root.spots: HotSpot { x: s.hx; y: s.hy; }
+                for s[i] in root.spots: KeyLabel {
+                    x: s.lx;
+                    y: s.ly;
+                    caption: Store.buttons.length > i ? Store.buttons[i].name : "";
+                    action: Store.buttons.length > i ? Store.action-names[Store.buttons[i].action] : "";
+                    open: root.editing == i;
+                    clicked => {
+                        root.editing = i;
+                        menu.show();
+                    }
+                }
+            }
+        }
+        HorizontalLayout {
+            alignment: center;
+            height: 32px;
+            HubButton {
+                label: @tr("Restore default");
+                enabled: Store.connected && !Store.busy;
+                clicked => { Store.restore-buttons(); }
+            }
+        }
+    }
+
+    menu := PopupWindow {
+        x: (root.width - 280px) / 2;
+        y: 60px;
+        width: 280px;
+        height: 460px;
+        close-policy: close-on-click-outside;
+        Rectangle {
+            background: #ffffff;
+            border-radius: 8px;
+            drop-shadow-offset-y: 9px;
+            drop-shadow-blur: 28px;
+            drop-shadow-color: #00000026;
+            VerticalLayout {
+                padding: 8px;
+                spacing: 6px;
+                Text {
+                    text: root.editing >= 0 && Store.buttons.length > root.editing ? Store.buttons[root.editing].name : "";
+                    color: Theme.k30;
+                    font-size: 12px;
+                    height: 22px;
+                    x: 8px;
+                }
+                Text { text: @tr("Macro repeat"); color: Theme.k60; font-size: 11px; x: 8px; }
+                Segmented {
+                    font: 12px;
+                    items: Store.macro-modes;
+                    selected: root.editing >= 0 && Store.buttons.length > root.editing ? Store.buttons[root.editing].macro-mode : 0;
+                    picked(m) => {
+                        if (Store.buttons[root.editing].action >= Store.basic-actions) {
+                            Store.set-button(root.editing, Store.buttons[root.editing].action, 0, m);
+                        } else {
+                            Store.pending-mode = m;
+                        }
+                    }
+                }
+                ScrollView {
+                    vertical-stretch: 1;
+                    VerticalLayout {
+                        for name[a] in Store.action-names: Rectangle {
+                            property <bool> current: root.editing >= 0 && Store.buttons.length > root.editing && Store.buttons[root.editing].action == a;
+                            height: 34px;
+                            border-radius: 6px;
+                            background: self.current ? Theme.k08 : (opt.has-hover ? Theme.k04 : transparent);
+                            HorizontalLayout {
+                                padding-left: 12px;
+                                padding-right: 12px;
+                                Text { text: name; color: Theme.k85; font-size: 14px; vertical-alignment: center; }
+                                if current: Icon { source: @image-url("assets/icons/check.svg"); width: 16px; height: 16px; y: 9px; }
+                            }
+                            opt := TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => {
+                                    Store.set-button(root.editing, a, 0, a >= Store.basic-actions ? Store.pending-mode : 0);
+                                    menu.close();
+                                    root.editing = -1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ================= Macros =================
+
+component MacroEventRow inherits Rectangle {
+    in property <int> index;
+    in property <MacroRow> item;
+    height: 40px;
+    border-radius: 6px;
+    background: ta.has-hover ? Theme.k08 : Theme.k04;
+    ta := TouchArea { }
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 8px;
+        spacing: 8px;
+        Text { text: (root.index + 1) + ".  " + root.item.text; color: Theme.k85; font-size: 14px; vertical-alignment: center; }
+        Rectangle { horizontal-stretch: 1; }
+        Text { text: @tr("wait"); color: Theme.k60; font-size: 12px; vertical-alignment: center; }
+        NumberBox {
+            y: (parent.height - self.height) / 2;
+            width: 82px;
+            value: root.item.delay;
+            min: 1;
+            max: 65535;
+            step: 10;
+            submitted(v) => { Store.macro-delay(root.index, v); }
+            edited(v) => { Store.macro-delay(root.index, v); }
+        }
+        Text { text: "ms"; color: Theme.k60; font-size: 12px; vertical-alignment: center; }
+        Rectangle {
+            width: 28px;
+            border-radius: 6px;
+            background: del.has-hover ? Theme.k08 : transparent;
+            Icon { source: @image-url("assets/icons/trash.svg"); width: 16px; height: 16px; colorize: Theme.error; }
+            del := TouchArea {
+                mouse-cursor: pointer;
+                clicked => { Store.macro-remove(root.index); }
+            }
+        }
+    }
+}
+
+export component MacrosPage inherits Rectangle {
+    property <int> pick-key: 0;
+    HorizontalLayout {
+        padding: 24px;
+        spacing: 16px;
+        Rectangle {
+            width: 180px;
+            background: Theme.k04;
+            border-radius: 8px;
+            VerticalLayout {
+                padding: 8px;
+                spacing: 2px;
+                Text { text: @tr("Macro list"); color: Theme.k30; font-size: 12px; height: 25px; x: 8px; vertical-alignment: center; }
+                for name[i] in Store.macro-names: Rectangle {
+                    height: 40px;
+                    border-radius: 8px;
+                    background: i == Store.macro-slot ? Theme.k08 : (slot-ta.has-hover ? Theme.k04 : transparent);
+                    Text { x: 16px; text: name; color: Theme.k85; font-size: 14px; font-weight: 500; vertical-alignment: center; }
+                    slot-ta := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { if (!Store.busy) { Store.open-macro(i); } }
+                    }
+                }
+                Rectangle { vertical-stretch: 1; }
+            }
+        }
+
+        fs := FocusScope {
+            key-pressed(event) => {
+                if (!Store.recording) { return reject; }
+                if (!event.repeat) { Store.macro-key(event.text, true); }
+                accept
+            }
+            key-released(event) => {
+                if (!Store.recording) { return reject; }
+                Store.macro-key(event.text, false);
+                accept
+            }
+            VerticalLayout {
+                spacing: 16px;
+                PageTitle {
+                    title: Store.macro-names.length > Store.macro-slot ? @tr("Macro {}", Store.macro-names[Store.macro-slot]) : @tr("Macro");
+                    HubButton {
+                        primary: Store.recording;
+                        label: Store.recording ? @tr("Stop recording") : @tr("Record keyboard");
+                        enabled: Store.connected && !Store.busy;
+                        clicked => {
+                            Store.recording = !Store.recording;
+                            fs.focus();
+                        }
+                    }
+                }
+                Text {
+                    text: Store.recording
+                        ? @tr("Recording: press the keys, the time between them is recorded too.")
+                        : @tr("Record from the keyboard or add keys. Then click Save to mouse and pick the macro on a button.");
+                    color: Store.recording ? Theme.orange : Theme.k60;
+                    font-size: 12px;
+                    wrap: word-wrap;
+                }
+                HorizontalLayout {
+                    spacing: 8px;
+                    height: 32px;
+                    Rectangle {
+                        width: 180px;
+                        border-radius: 6px;
+                        background: pick-ta.has-hover ? Theme.k12 : Theme.k08;
+                        HorizontalLayout {
+                            padding-left: 12px;
+                            padding-right: 8px;
+                            Text {
+                                text: Store.key-names.length > root.pick-key ? Store.key-names[root.pick-key] : "";
+                                color: Theme.k85;
+                                font-size: 14px;
+                                vertical-alignment: center;
+                            }
+                            Rectangle { horizontal-stretch: 1; }
+                            Icon { source: @image-url("assets/icons/chevron.svg"); width: 14px; height: 14px; y: 9px; transform-rotation: 90deg; }
+                        }
+                        pick-ta := TouchArea { mouse-cursor: pointer; clicked => { keys.show(); } }
+                    }
+                    HubButton {
+                        label: @tr("Add key");
+                        has-icon: true;
+                        icon: @image-url("assets/icons/plus.svg");
+                        enabled: !Store.recording;
+                        clicked => { Store.macro-add(root.pick-key, 30); }
+                    }
+                    Rectangle { horizontal-stretch: 1; }
+                }
+                Rectangle {
+                    vertical-stretch: 1;
+                    background: Theme.k04;
+                    border-radius: 8px;
+                    if Store.macro-events.length == 0: Text {
+                        text: @tr("Empty macro");
+                        color: Theme.k30;
+                        font-size: 14px;
+                    }
+                    ScrollView {
+                        VerticalLayout {
+                            padding: 12px;
+                            spacing: 6px;
+                            for ev[i] in Store.macro-events: MacroEventRow { index: i; item: ev; }
+                        }
+                    }
+                }
+                HorizontalLayout {
+                    spacing: 8px;
+                    height: 32px;
+                    Text { text: @tr("{} / 70 events", Store.macro-events.length); color: Theme.k60; font-size: 12px; vertical-alignment: center; }
+                    Rectangle { horizontal-stretch: 1; }
+                    HubButton {
+                        label: @tr("Clear");
+                        enabled: !Store.busy && Store.macro-events.length > 0;
+                        clicked => { Store.macro-clear(); }
+                    }
+                    HubButton {
+                        primary: true;
+                        label: Store.busy ? @tr("Saving...") : @tr("Save to mouse");
+                        enabled: Store.connected && !Store.busy && Store.macro-dirty && !Store.recording;
+                        clicked => { Store.save-macro(); }
+                    }
+                }
+            }
+        }
+    }
+
+    keys := PopupWindow {
+        x: 220px;
+        y: 120px;
+        width: 200px;
+        height: 380px;
+        close-policy: close-on-click-outside;
+        Rectangle {
+            background: #ffffff;
+            border-radius: 8px;
+            drop-shadow-offset-y: 9px;
+            drop-shadow-blur: 28px;
+            drop-shadow-color: #00000026;
+            ScrollView {
+                VerticalLayout {
+                    padding: 6px;
+                    for k[i] in Store.key-names: Rectangle {
+                        height: 30px;
+                        border-radius: 6px;
+                        background: i == root.pick-key ? Theme.k08 : (key-ta.has-hover ? Theme.k04 : transparent);
+                        Text { x: 12px; text: k; color: Theme.k85; font-size: 14px; vertical-alignment: center; }
+                        key-ta := TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => {
+                                root.pick-key = i;
+                                keys.close();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ================= DPI =================
+
+component DpiCard inherits Rectangle {
+    in property <int> index;
+    in property <DpiLevel> level;
+    in property <bool> last;
+    property <bool> split: root.level.x != root.level.y;
+    property <int> draft-x: root.level.x;
+    property <int> draft-y: root.level.y;
+    property <bool> current: Store.dpi-current == root.index;
+    property <bool> dirty: root.draft-x != root.level.x || root.draft-y != root.level.y;
+    function apply(x: int, y: int) {
+        root.draft-x = x;
+        root.draft-y = y;
+        Store.set-dpi(root.index, x, y);
+    }
+    border-radius: 8px;
+    background: Theme.k08;
+    border-width: 2px;
+    border-color: root.current ? Theme.k85 : transparent;
+    height: root.split ? 205px : 145px;
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => { if (!root.current && !Store.busy) { Store.set-dpi-current(root.index); } }
+    }
+    VerticalLayout {
+        padding-left: 24px;
+        padding-right: 24px;
+        padding-top: 16px;
+        padding-bottom: 16px;
+        spacing: 10px;
+        HorizontalLayout {
+            height: 29px;
+            spacing: 8px;
+            Rectangle {
+                width: 86px;
+                border-radius: 16px;
+                background: Theme.k08;
+                HorizontalLayout {
+                    padding-left: 16px;
+                    padding-right: 16px;
+                    spacing: 8px;
+                    Rectangle {
+                        width: 16px;
+                        height: 16px;
+                        y: 6px;
+                        border-radius: 8px;
+                        border-width: root.current ? 5px : 1px;
+                        border-color: root.current ? #000000 : Theme.k30;
+                        background: #ffffff;
+                    }
+                    Text { text: "DPI " + (root.index + 1); color: Theme.k85; font-size: 14px; vertical-alignment: center; }
+                }
+            }
+            Rectangle { horizontal-stretch: 1; }
+            Text { text: @tr("Separate X/Y axes"); color: Theme.k85; font-size: 12px; vertical-alignment: center; }
+            Switch {
+                y: 2px;
+                checked: root.split;
+                enabled: Store.connected && !Store.busy;
+                toggled(on) => {
+                    if (on) {
+                        root.apply(root.level.x, root.level.x == 10 ? 20 : root.level.x - 10);
+                    } else {
+                        root.apply(root.level.x, root.level.x);
+                    }
+                }
+            }
+            if root.last && Store.dpi-count > 1: Rectangle {
+                width: 24px;
+                border-radius: 6px;
+                background: trash.has-hover ? Theme.k08 : transparent;
+                Icon { source: @image-url("assets/icons/trash.svg"); width: 16px; height: 16px; colorize: Theme.error; }
+                trash := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { if (!Store.busy) { Store.set-dpi-count(Store.dpi-count - 1); } }
+                }
+            }
+        }
+        HorizontalLayout {
+            height: 25px;
+            spacing: 8px;
+            Text { text: root.split ? "X" : "X/Y"; color: Theme.k85; font-size: 14px; vertical-alignment: center; }
+            Rectangle { horizontal-stretch: 1; }
+            if root.dirty: Text { text: @tr("Press Enter or release the slider to apply"); color: Theme.k60; font-size: 11px; vertical-alignment: center; }
+            NumberBox {
+                y: 1px;
+                value: root.draft-x;
+                min: 10;
+                max: 42000;
+                step: 50;
+                enabled: Store.connected && !Store.busy;
+                edited(v) => { root.draft-x = v; }
+                submitted(v) => { root.apply(v, root.split ? root.draft-y : v); }
+            }
+        }
+        HubSlider {
+            value: root.draft-x;
+            enabled: Store.connected && !Store.busy;
+            changed(v) => {
+                root.draft-x = v;
+                if (!root.split) { root.draft-y = v; }
+            }
+            released => { root.apply(root.draft-x, root.split ? root.draft-y : root.draft-x); }
+        }
+        if root.split: HorizontalLayout {
+            height: 25px;
+            spacing: 8px;
+            Text { text: "Y"; color: Theme.k85; font-size: 14px; vertical-alignment: center; }
+            Rectangle { horizontal-stretch: 1; }
+            NumberBox {
+                y: 1px;
+                value: root.draft-y;
+                min: 10;
+                max: 42000;
+                step: 50;
+                enabled: Store.connected && !Store.busy;
+                edited(v) => { root.draft-y = v; }
+                submitted(v) => { root.apply(root.draft-x, v); }
+            }
+        }
+        if root.split: HubSlider {
+            value: root.draft-y;
+            enabled: Store.connected && !Store.busy;
+            changed(v) => { root.draft-y = v; }
+            released => { root.apply(root.draft-x, root.draft-y); }
+        }
+        Rectangle {
+            height: 10px;
+            Text { x: 0; text: "10"; color: Theme.k60; font-size: 10px; }
+            Text { x: parent.width * 10000 / 42000 - self.width / 2; text: "10000"; color: Theme.k60; font-size: 10px; }
+            Text { x: parent.width * 30000 / 42000 - self.width / 2; text: "30000"; color: Theme.k60; font-size: 10px; }
+            Text { x: parent.width - self.width; text: "42000"; color: Theme.k60; font-size: 10px; }
+        }
+    }
+}
+
+export component DpiPage inherits Rectangle {
+    VerticalLayout {
+        padding: 24px;
+        spacing: 24px;
+        PageTitle {
+            title: @tr("DPI Settings");
+            HubButton {
+                label: @tr("Add DPI level");
+                has-icon: true;
+                icon: @image-url("assets/icons/plus.svg");
+                enabled: Store.connected && !Store.busy && Store.dpi-count < 8;
+                clicked => { Store.set-dpi-count(Store.dpi-count + 1); }
+            }
+        }
+        ScrollView {
+            vertical-stretch: 1;
+            VerticalLayout {
+                spacing: 16px;
+                alignment: start;
+                for lvl[i] in Store.dpi-levels: DpiCard {
+                    index: i;
+                    level: lvl;
+                    last: i == Store.dpi-levels.length - 1;
+                }
+            }
+        }
+    }
+}
+
+// ================= Performance =================
+
+export component PerformancePage inherits Rectangle {
+    property <brush> rate-brush: Store.rate-index <= 2 ? Theme.rate-blue : (Store.rate-index <= 5 ? Theme.rate-orange : Theme.rate-red);
+    property <[string]> mode-hints: [
+        @tr("In this mode the sensor runs at low performance with long battery life, good for office work."),
+        @tr("Competitive firmware: faster sensor response."),
+        @tr("Competitive MAX firmware: the sensor at full speed, uses more battery."),
+    ];
+    HorizontalLayout {
+        padding: 24px;
+        spacing: 20px;
+        VerticalLayout {
+            spacing: 20px;
+            Rectangle {
+                vertical-stretch: 1;
+                Image {
+                    source: @image-url("assets/mouse.png");
+                    height: min(parent.height, 420px);
+                    width: self.height * 627 / 1102;
+                    x: (parent.width - self.width) / 2;
+                    y: (parent.height - self.height) / 2;
+                    image-fit: contain;
+                }
+            }
+            Rectangle {
+                height: 151px;
+                background: Theme.panel;
+                border-radius: 8px;
+                drop-shadow-offset-y: 2px;
+                drop-shadow-blur: 12px;
+                drop-shadow-color: #0000000d;
+                VerticalLayout {
+                    padding: 24px;
+                    spacing: 24px;
+                    HorizontalLayout {
+                        spacing: 8px;
+                        height: 21px;
+                        Icon { source: @image-url("assets/icons/wifi.svg"); width: 16px; height: 16px; y: 2px; colorize: #000000; }
+                        Text { text: @tr("Polling Rate"); color: #000000; font-size: 14px; vertical-alignment: center; }
+                    }
+                    VerticalLayout {
+                        spacing: 8px;
+                        Segmented {
+                            items: Store.rate-names;
+                            selected: Store.rate-index;
+                            selected-bg: root.rate-brush;
+                            selected-text: #000000;
+                            enabled: Store.connected && !Store.busy;
+                            picked(i) => { Store.set-rate(i); }
+                        }
+                        HorizontalLayout {
+                            Text { text: @tr("Daily work"); color: Theme.k60; font-size: 12px; }
+                            Text { text: @tr("Competitive gaming"); color: Theme.k60; font-size: 12px; horizontal-alignment: right; }
+                        }
+                    }
+                }
+            }
+        }
+        VerticalLayout {
+            width: 380px;
+            spacing: 20px;
+            alignment: end;
+            TitleCard {
+                title: @tr("Battery Life Estimate");
+                height: 264px;
+                VerticalLayout {
+                    padding-left: 20px;
+                    padding-right: 20px;
+                    padding-bottom: 20px;
+                    spacing: 8px;
+                    Strong { text: "65H ~ 600H"; color: #000000; font-size: 44px; font-weight: 700; }
+                    HorizontalLayout {
+                        spacing: 16px;
+                        Text { text: "1k: 480~600H"; color: #000000; font-size: 13px; font-weight: 600; }
+                        Text { text: "8k: 65~80H"; color: #000000; font-size: 13px; font-weight: 600; }
+                        Rectangle { horizontal-stretch: 1; }
+                    }
+                    Text {
+                        text: @tr("Reference time on a full charge with the current settings");
+                        color: Theme.k60;
+                        font-size: 12px;
+                        wrap: word-wrap;
+                    }
+                    Rectangle { vertical-stretch: 1; }
+                    Rectangle {
+                        height: 8px;
+                        border-radius: 4px;
+                        background: Theme.k08;
+                        Rectangle {
+                            x: 0;
+                            height: parent.height;
+                            border-radius: 4px;
+                            width: parent.width * clamp(Store.battery, 0, 100) / 100;
+                            background: #000000;
+                            animate width { duration: 300ms; }
+                        }
+                    }
+                }
+            }
+            TitleCard {
+                title: @tr("Sensor Sampling Rate");
+                height: 200px;
+                VerticalLayout {
+                    padding-left: 20px;
+                    padding-right: 20px;
+                    padding-bottom: 16px;
+                    spacing: 12px;
+                    VSegmented {
+                        items: Store.sensor-modes;
+                        selected: Store.sensor-mode;
+                        enabled: Store.connected && !Store.busy;
+                        picked(i) => { Store.set-sensor-mode(i); }
+                    }
+                    Text {
+                        text: Store.sensor-mode >= 0 && Store.sensor-mode < 3 ? root.mode-hints[Store.sensor-mode] : "";
+                        color: Theme.k60;
+                        font-size: 12px;
+                        wrap: word-wrap;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ================= Parameters =================
+
+export component ParamsPage inherits Rectangle {
+    VerticalLayout {
+        padding: 24px;
+        spacing: 24px;
+        PageTitle { title: @tr("Parameter Settings"); }
+        ScrollView {
+            vertical-stretch: 1;
+            VerticalLayout {
+                spacing: 12px;
+                alignment: start;
+                ParamRow {
+                    label: @tr("Lift-off distance (LOD)");
+                    hint: @tr("Height in mm at which the sensor stops tracking when you lift the mouse");
+                    Segmented {
+                        width: 520px;
+                        font: 12px;
+                        items: Store.silent-names;
+                        selected: Store.silent-index;
+                        enabled: Store.connected && !Store.busy;
+                        picked(i) => { Store.set-param("silent", i); }
+                    }
+                }
+                ParamRow {
+                    label: @tr("Button debounce");
+                    hint: @tr("Time to ignore false double clicks, in milliseconds");
+                    NumberBox {
+                        value: Store.debounce;
+                        min: 0;
+                        max: 30;
+                        step: 1;
+                        enabled: Store.connected && !Store.busy;
+                        submitted(v) => { Store.set-param("debounce", v); }
+                    }
+                }
+                ParamRow {
+                    label: "Motion Sync";
+                    hint: @tr("Aligns sensor reports with the polling");
+                    Switch {
+                        checked: Store.motion-sync;
+                        enabled: Store.connected && !Store.busy;
+                        toggled(v) => { Store.set-param("motion", v ? 1 : 0); }
+                    }
+                }
+                ParamRow {
+                    label: @tr("Angle snapping");
+                    hint: @tr("Straightens nearly straight movements");
+                    Switch {
+                        checked: Store.linear;
+                        enabled: Store.connected && !Store.busy;
+                        toggled(v) => { Store.set-param("linear", v ? 1 : 0); }
+                    }
+                }
+                ParamRow {
+                    label: @tr("Ripple control");
+                    hint: @tr("Smooths jitter at high DPI");
+                    Switch {
+                        checked: Store.ripple;
+                        enabled: Store.connected && !Store.busy;
+                        toggled(v) => { Store.set-param("ripple", v ? 1 : 0); }
+                    }
+                }
+                ParamRow {
+                    label: @tr("Long distance mode");
+                    hint: @tr("Improves the wireless signal far from the receiver");
+                    Switch {
+                        checked: Store.far-distance;
+                        enabled: Store.connected && !Store.busy;
+                        toggled(v) => { Store.set-param("far", v ? 1 : 0); }
+                    }
+                }
+                ParamRow {
+                    label: @tr("Sleep time");
+                    hint: @tr("An idle mouse goes into power saving, in seconds");
+                    NumberBox {
+                        value: Store.sleep-s;
+                        min: 10;
+                        max: 2550;
+                        step: 10;
+                        enabled: Store.connected && !Store.busy;
+                        submitted(v) => { Store.set-param("sleep", v); }
+                    }
+                }
+                ParamRow {
+                    label: @tr("Sensor sleeps when idle");
+                    hint: @tr("Turns the sensor off after a while without use");
+                    Switch {
+                        checked: Store.sensor-sleep-on;
+                        enabled: Store.connected && !Store.busy;
+                        toggled(v) => { Store.set-param("ssleep", v ? 1 : 0); }
+                    }
+                }
+                ParamRow {
+                    label: @tr("Time until the sensor sleeps");
+                    hint: @tr("In seconds");
+                    NumberBox {
+                        value: Store.sensor-sleep-s;
+                        min: 10;
+                        max: 2550;
+                        step: 10;
+                        enabled: Store.connected && !Store.busy;
+                        submitted(v) => { Store.set-param("ssleep-s", v); }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ================= Configuration =================
+
+export component ProfilesPage inherits Rectangle {
+    property <bool> confirm-reset: false;
+    VerticalLayout {
+        padding: 24px;
+        spacing: 24px;
+        PageTitle { title: @tr("Configuration Management"); }
+        VerticalLayout {
+            spacing: 12px;
+            alignment: start;
+            ParamRow {
+                label: @tr("Active config file");
+                hint: @tr("Each profile keeps its own DPI, polling and buttons");
+                Segmented {
+                    width: 360px;
+                    items: [@tr("Config {}", 1), @tr("Config {}", 2), @tr("Config {}", 3), @tr("Config {}", 4)];
+                    selected: Store.profile;
+                    enabled: Store.connected && !Store.busy;
+                    picked(i) => { Store.set-param("profile", i); }
+                }
+            }
+            ParamRow {
+                label: @tr("Undo last change");
+                hint: Store.undo-count > 0 ? @tr("{} changes saved in the history", Store.undo-count) : @tr("Nothing in the history yet");
+                HubButton {
+                    label: @tr("Undo");
+                    enabled: Store.connected && !Store.busy && Store.undo-count > 0;
+                    clicked => { Store.undo(); }
+                }
+            }
+            ParamRow {
+                label: @tr("Write history");
+                hint: @tr("Before every write the app keeps the old value");
+                HubButton { label: @tr("Open folder"); clicked => { Store.open-folder(); } }
+            }
+            ParamRow {
+                label: @tr("Restore factory defaults");
+                hint: root.confirm-reset ? @tr("Are you sure? Click Confirm. Undo can still bring it back.") : @tr("Resets DPI, polling, buttons and parameters");
+                HorizontalLayout {
+                    spacing: 8px;
+                    if root.confirm-reset: HubButton { label: @tr("Cancel"); clicked => { root.confirm-reset = false; } }
+                    HubButton {
+                        primary: true;
+                        label: root.confirm-reset ? @tr("Confirm") : @tr("Restore");
+                        enabled: Store.connected && !Store.busy;
+                        clicked => {
+                            if (root.confirm-reset) {
+                                root.confirm-reset = false;
+                                Store.factory-reset();
+                            } else {
+                                root.confirm-reset = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Rectangle { vertical-stretch: 1; }
+    }
+}
+
+// ================= Other =================
+
+export component OtherPage inherits Rectangle {
+    VerticalLayout {
+        padding: 24px;
+        spacing: 24px;
+        PageTitle { title: @tr("Other Settings"); }
+        ScrollView {
+            vertical-stretch: 1;
+            VerticalLayout {
+                spacing: 12px;
+                alignment: start;
+                ParamRow {
+                    label: @tr("Language");
+                    hint: @tr("Language of this app");
+                    Segmented {
+                        width: 260px;
+                        items: Store.languages;
+                        selected: Store.language;
+                        picked(i) => { Store.set-language(i); }
+                    }
+                }
+                ParamRow {
+                    label: @tr("Receiver light");
+                    hint: @tr("What the dongle light shows");
+                    Segmented {
+                        width: 520px;
+                        font: 12px;
+                        items: Store.dongle-lights;
+                        selected: Store.dongle-light;
+                        enabled: Store.connected && !Store.busy;
+                        picked(i) => { Store.set-param("dongle", i); }
+                    }
+                }
+                ParamRow {
+                    label: @tr("Start with Windows");
+                    hint: @tr("Opens hidden in the tray when you turn on the PC");
+                    Switch { checked: Store.autostart; toggled(v) => { Store.set-autostart(v); } }
+                }
+                ParamRow {
+                    label: @tr("Start in the tray");
+                    hint: @tr("Does not show the window when the app opens");
+                    Switch { checked: Store.start-in-tray; toggled(v) => { Store.set-start-in-tray(v); } }
+                }
+                ParamRow {
+                    label: @tr("Battery");
+                    hint: Store.charging ? @tr("{} · charging", Store.voltage) : Store.voltage;
+                    Text { text: Store.battery + "%"; color: Theme.k85; font-size: 14px; font-weight: 500; }
+                }
+                ParamRow {
+                    label: @tr("Mouse firmware");
+                    hint: @tr("Receiver {}", Store.dongle-version);
+                    Text { text: Store.version; color: Theme.k85; font-size: 14px; font-weight: 500; }
+                }
+                ParamRow {
+                    label: @tr("Identification");
+                    hint: "a9-panel 0.2";
+                    Text { text: Store.model-id; color: Theme.k85; font-size: 14px; font-weight: 500; }
+                }
+                HorizontalLayout {
+                    alignment: start;
+                    HubButton {
+                        label: Store.busy ? @tr("Please wait...") : @tr("Reload everything from the mouse");
+                        enabled: !Store.busy;
+                        clicked => { Store.refresh(); }
+                    }
+                }
+            }
+        }
+    }
+}

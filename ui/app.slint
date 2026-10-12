@@ -1,0 +1,246 @@
+// Main window: same layout as ATK Hub (48px header, 226px sidebar, panel with radius 6).
+import "assets/OPPOSans.ttf";
+import { Theme, Strong, Icon, NavItem } from "components.slint";
+import { Store, DpiLevel, ButtonRow, MacroRow } from "store.slint";
+import { ButtonsPage, MacrosPage, DpiPage, PerformancePage, ParamsPage, ProfilesPage, OtherPage } from "pages.slint";
+
+export { Store, DpiLevel, ButtonRow, MacroRow }
+
+component WinButton inherits Rectangle {
+    in property <image> icon;
+    in property <color> hover: Theme.k08;
+    callback clicked();
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: ta.has-hover ? root.hover : transparent;
+    Icon { source: root.icon; width: 18px; height: 18px; }
+    ta := TouchArea { clicked => { root.clicked(); } }
+}
+
+export component App inherits Window {
+    title: "A9 Panel";
+    no-frame: true;
+    width: 1280px;
+    height: 800px;
+    background: Theme.bg;
+    default-font-family: "OPPO Sans 4.0";
+    default-font-size: 14px;
+
+    in-out property <int> page: 0;
+    callback minimize();
+    callback close-app();
+    callback drag(length, length);
+
+    property <[{label: string, icon: image}]> nav: [
+        { label: @tr("Key Settings"), icon: @image-url("assets/icons/keys.svg") },
+        { label: @tr("Macro Settings"), icon: @image-url("assets/icons/macro.svg") },
+        { label: @tr("DPI Settings"), icon: @image-url("assets/icons/dpi.svg") },
+        { label: @tr("Performance"), icon: @image-url("assets/icons/perf.svg") },
+        { label: @tr("Parameters"), icon: @image-url("assets/icons/params.svg") },
+        { label: @tr("Configuration"), icon: @image-url("assets/icons/config.svg") },
+        { label: @tr("Other Settings"), icon: @image-url("assets/icons/other.svg") },
+    ];
+
+    VerticalLayout {
+        spacing: 2px;
+        // header: k04 background, padding 4/20, pills with radius 30
+        Rectangle {
+            height: 48px;
+            background: Theme.k04;
+            TouchArea {
+                moved => { root.drag(self.mouse-x - self.pressed-x, self.mouse-y - self.pressed-y); }
+            }
+            HorizontalLayout {
+                padding-left: 20px;
+                padding-right: 12px;
+                padding-top: 4px;
+                padding-bottom: 4px;
+                spacing: 8px;
+                Rectangle {
+                    width: 150px;
+                    border-radius: 30px;
+                    background: Theme.k04;
+                    HorizontalLayout {
+                        padding-left: 16px;
+                        spacing: 6px;
+                        Rectangle { width: 4px; height: 16px; y: 12px; border-radius: 2px; background: @linear-gradient(180deg, #ff9a4d 0%, #e8333b 100%); }
+                        Strong { text: "A9 PANEL"; color: #000000; font-size: 13px; font-weight: 700; vertical-alignment: center; }
+                    }
+                }
+                Rectangle {
+                    width: 160px;
+                    height: 28px;
+                    y: 6px;
+                    border-radius: 30px;
+                    background: Theme.k20;
+                    border-width: 1px;
+                    border-color: Theme.k16;
+                    HorizontalLayout {
+                        padding-left: 20px;
+                        padding-right: 16px;
+                        Text { text: "ATK A9 Ultimate"; color: #000000; font-size: 14px; vertical-alignment: center; overflow: elide; }
+                    }
+                }
+                Rectangle { horizontal-stretch: 1; }
+                // black notice like the Hub's "Abnormal mouse sleep", showing the current status
+                if Store.status != "": Rectangle {
+                    y: 7px;
+                    height: 26px;
+                    width: min(status-text.preferred-width + 24px, 520px);
+                    border-radius: 4px;
+                    background: #000000;
+                    status-text := Text {
+                        text: Store.status;
+                        color: #ffffff;
+                        font-size: 12px;
+                        overflow: elide;
+                        width: parent.width - 24px;
+                        horizontal-alignment: center;
+                    }
+                }
+                WinButton { y: 4px; icon: @image-url("assets/icons/minimize.svg"); clicked => { root.minimize(); } }
+                WinButton { y: 4px; icon: @image-url("assets/icons/close.svg"); hover: #ff4d4f33; clicked => { root.close-app(); } }
+            }
+        }
+
+        HorizontalLayout {
+            spacing: 2px;
+            padding-right: 4px;
+            padding-bottom: 2px;
+
+            // sidebar: k04 blocks with radius 8, 2px apart
+            VerticalLayout {
+                width: 226px;
+                spacing: 2px;
+
+                Rectangle {
+                    height: 56px;
+                    border-radius: 8px;
+                    background: dev-ta.has-hover ? Theme.k08 : Theme.k04;
+                    HorizontalLayout {
+                        padding-left: 25px;
+                        padding-right: 16px;
+                        spacing: 8px;
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 2px;
+                            HorizontalLayout {
+                                spacing: 6px;
+                                Text { text: Store.battery + "%"; color: Theme.k85; font-size: 12px; font-weight: 500; }
+                                Icon { source: @image-url("assets/icons/battery.svg"); width: 16px; height: 16px; colorize: Store.charging ? Theme.success : Theme.k85; }
+                                Icon { source: @image-url("assets/icons/wifi.svg"); width: 14px; height: 14px; y: 1px; colorize: Store.connected ? Theme.k60 : Theme.error; }
+                                Rectangle { horizontal-stretch: 1; }
+                            }
+                            Text { text: "ATK A9 Ultimate"; color: Theme.k85; font-size: 14px; font-weight: 500; }
+                        }
+                        Icon { source: @image-url("assets/icons/chevron.svg"); width: 16px; height: 16px; y: 20px; }
+                    }
+                    dev-ta := TouchArea { mouse-cursor: pointer; clicked => { root.page = 6; } }
+                }
+
+                Rectangle {
+                    height: 48px;
+                    border-radius: 8px;
+                    background: cfg-ta.has-hover ? Theme.k08 : Theme.k04;
+                    HorizontalLayout {
+                        padding-left: 25px;
+                        padding-right: 16px;
+                        Text { text: @tr("Config {}", Store.profile + 1); color: Theme.k85; font-size: 14px; font-weight: 500; vertical-alignment: center; }
+                        Icon { source: @image-url("assets/icons/chevron.svg"); width: 16px; height: 16px; y: 16px; }
+                    }
+                    cfg-ta := TouchArea { mouse-cursor: pointer; clicked => { root.page = 5; } }
+                }
+
+                Rectangle {
+                    vertical-stretch: 1;
+                    border-radius: 8px;
+                    background: Theme.k04;
+                    VerticalLayout {
+                        padding-top: 8px;
+                        padding-bottom: 8px;
+                        Text {
+                            text: @tr("Mouse Configuration");
+                            color: Theme.k30;
+                            font-size: 12px;
+                            height: 25px;
+                            x: 28px;
+                            vertical-alignment: center;
+                        }
+                        VerticalLayout {
+                            padding-left: 8px;
+                            padding-right: 8px;
+                            spacing: 2px;
+                            for n[i] in root.nav: NavItem {
+                                label: n.label;
+                                icon: n.icon;
+                                active: root.page == i;
+                                clicked => { root.page = i; }
+                            }
+                        }
+                        Rectangle { vertical-stretch: 1; }
+                        HorizontalLayout {
+                            padding-left: 28px;
+                            height: 24px;
+                            Text { text: @tr("a9-panel · unofficial ATK Hub port"); color: Theme.k60; font-size: 12px; vertical-alignment: center; }
+                        }
+                    }
+                }
+            }
+
+            // main panel: 80% white, radius 6
+            Rectangle {
+                border-radius: 6px;
+                background: Theme.panel;
+                clip: true;
+                if root.page == 0: ButtonsPage { }
+                if root.page == 1: MacrosPage { }
+                if root.page == 2: DpiPage { }
+                if root.page == 3: PerformancePage { }
+                if root.page == 4: ParamsPage { }
+                if root.page == 5: ProfilesPage { }
+                if root.page == 6: OtherPage { }
+            }
+        }
+    }
+
+    // the Hub's "Data Loading": dimmed background and a card with a black bar
+    if Store.loading: Rectangle {
+        background: #c7c8cc99;
+        TouchArea { }
+        Rectangle {
+            width: 320px;
+            height: 150px;
+            border-radius: 8px;
+            background: #ffffffd9;
+            drop-shadow-offset-y: 16px;
+            drop-shadow-blur: 32px;
+            drop-shadow-color: #00000026;
+            VerticalLayout {
+                padding: 22px;
+                spacing: 16px;
+                alignment: center;
+                Strong { text: @tr("Loading data"); color: #000000; font-size: 16px; font-weight: 700; horizontal-alignment: center; }
+                HorizontalLayout {
+                    spacing: 16px;
+                    Rectangle {
+                        height: 4px;
+                        y: 9px;
+                        border-radius: 2px;
+                        background: Theme.k12;
+                        Rectangle {
+                            x: 0;
+                            height: parent.height;
+                            border-radius: 2px;
+                            width: parent.width * clamp(Store.progress, 0, 100) / 100;
+                            background: #000000;
+                            animate width { duration: 200ms; }
+                        }
+                    }
+                    Strong { text: Store.progress + "%"; color: #000000; font-size: 14px; font-weight: 700; }
+                }
+                Text { text: @tr("Loading... move the mouse if it takes long"); color: Theme.k60; font-size: 12px; horizontal-alignment: center; }
+            }
+        }
+    }
+}

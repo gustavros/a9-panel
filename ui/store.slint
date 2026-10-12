@@ -1,0 +1,108 @@
+// State shared by the pages. Rust fills it in and handles the callbacks.
+
+export struct DpiLevel {
+    x: int,
+    y: int,
+}
+
+export struct ButtonRow {
+    name: string,
+    action: int,      // index into Store.action-names
+    macro-slot: int,  // used when the action is a macro
+    macro-mode: int,  // index into Store.macro-modes
+}
+
+export struct MacroRow {
+    text: string,
+    delay: int,
+}
+
+export global Store {
+    // connection
+    in-out property <bool> connected;
+    in-out property <bool> busy;
+    in-out property <bool> loading;
+    in-out property <int> progress;
+    in-out property <string> status;
+
+    // general
+    in-out property <int> battery;
+    in-out property <bool> charging;
+    in-out property <string> voltage: "-";
+    in-out property <string> version: "-";
+    in-out property <string> dongle-version: "-";
+    in-out property <string> model-id: "-";
+
+    // performance
+    in-out property <int> rate-index: -1;
+    in-out property <[string]> rate-names: ["125", "250", "500", "1K", "2K", "4K", "8K"];
+    in-out property <int> sensor-mode: -1;
+    in-out property <[string]> sensor-modes;
+    in-out property <bool> sensor-sleep-on;
+    in-out property <int> sensor-sleep-s;
+
+    // DPI
+    in-out property <[DpiLevel]> dpi-levels;
+    in-out property <int> dpi-count: 1;
+    in-out property <int> dpi-current;
+
+    // parameters
+    in-out property <int> debounce;
+    in-out property <bool> motion-sync;
+    in-out property <int> sleep-s;
+    in-out property <bool> linear;
+    in-out property <bool> ripple;
+    in-out property <int> silent-index: -1;
+    in-out property <[string]> silent-names;
+    in-out property <bool> far-distance;
+
+    // light and profiles
+    in-out property <int> dongle-light: -1;
+    in-out property <[string]> dongle-lights;
+    in-out property <int> profile;
+
+    // buttons
+    in-out property <[ButtonRow]> buttons;
+    in-out property <[string]> action-names;
+    in-out property <int> basic-actions;  // actions before the macros in the list
+    in-out property <int> pending-mode;   // repeat mode picked before assigning a macro
+    in-out property <[string]> macro-modes;
+    in-out property <[string]> macro-names;
+
+    // macros
+    in-out property <int> macro-slot;
+    in-out property <[MacroRow]> macro-events;
+    in-out property <bool> macro-dirty;
+    in-out property <bool> recording;
+    in-out property <[string]> key-names;
+
+    // app
+    in-out property <int> undo-count;
+    in-out property <bool> start-in-tray;
+    in-out property <bool> autostart;
+    in-out property <[string]> languages;
+    in-out property <int> language;
+
+    callback refresh();
+    callback set-rate(int);
+    callback set-sensor-mode(int);
+    callback set-dpi(int, int, int);
+    callback set-dpi-count(int);
+    callback set-dpi-current(int);
+    callback set-param(string, int);
+    callback set-button(int, int, int, int);
+    callback restore-buttons();
+    callback open-macro(int);
+    callback macro-key(string, bool);
+    callback macro-add(int, int);
+    callback macro-remove(int);
+    callback macro-delay(int, int);
+    callback macro-clear();
+    callback save-macro();
+    callback undo();
+    callback factory-reset();
+    callback open-folder();
+    callback set-start-in-tray(bool);
+    callback set-autostart(bool);
+    callback set-language(int);
+}
