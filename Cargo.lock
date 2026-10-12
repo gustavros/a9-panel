@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "a9-panel"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "hidapi",
  "image",
@@ -12,6 +12,7 @@ dependencies = [
  "slint",
  "slint-build",
  "tray-icon",
+ "windows-sys 0.61.2",
  "winresource",
 ]
 

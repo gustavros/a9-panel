@@ -348,3 +348,35 @@ export component PageTitle inherits HorizontalLayout {
     Rectangle { horizontal-stretch: 1; }
     @children
 }
+
+// Text field like the Hub's el-input: white, radius 6, 1px #dcdfe6 border (black when focused), 32px.
+export component TextBox inherits Rectangle {
+    in property <string> text;
+    in property <string> placeholder;
+    callback submitted(string);
+    height: 32px;
+    border-radius: 6px;
+    background: #ffffff;
+    border-width: 1px;
+    border-color: field.has-focus ? #000000 : Theme.input-border;
+    HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 12px;
+        field := TextInput {
+            text: root.text;
+            font-size: 13px;
+            color: #000000;
+            single-line: true;
+            vertical-alignment: center;
+            accepted => { root.submitted(self.text); }
+        }
+    }
+    if field.text == "": Text {
+        x: 12px;
+        text: root.placeholder;
+        color: Theme.k30;
+        font-size: 13px;
+        vertical-alignment: center;
+        height: parent.height;
+    }
+}

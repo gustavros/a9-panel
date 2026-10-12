@@ -3,6 +3,7 @@
 mod assets;
 mod backup;
 mod device;
+mod gamemode;
 mod i18n;
 mod keys;
 mod model;
@@ -238,6 +239,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     store.set_undo_count(backup::count() as i32);
     store.set_start_in_tray(prefs.borrow().start_in_tray);
     store.set_autostart(settings::autostart_enabled());
+    {
+        let p = prefs.borrow();
+        store.set_game_mode(p.game_mode);
+        store.set_game_list(p.games.clone().into());
+        store.set_game_rate_index(RATES.iter().position(|r| r.0 == p.game_rate_hz).map_or(-1, |i| i as i32));
+        store.set_game_sensor_mode(p.game_sensor_mode as i32);
+    }
     store.set_status(t("Looking for the mouse...").into());
 
     let (job_tx, job_rx) = mpsc::channel::<Job>();
@@ -459,6 +467,55 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
+    // ---- automatic game mode settings
+    let save_prefs = {
+        let (p, weak) = (prefs.clone(), ui.as_weak());
+        move || {
+            if let Err(e) = settings::save(&p.borrow()) {
+                if let Some(ui) = weak.upgrade() {
+                    ui.global::<Store>().set_status(tf("Could not save the setting: {}", e).into());
+                }
+            }
+        }
+    };
+    let (p, sv, weak) = (prefs.clone(), save_prefs.clone(), ui.as_weak());
+    store.on_set_game_mode(move |on| {
+        p.borrow_mut().game_mode = on;
+        sv();
+        if let Some(ui) = weak.upgrade() {
+            ui.global::<Store>().set_game_mode(on);
+        }
+    });
+    let (p, sv, weak) = (prefs.clone(), save_prefs.clone(), ui.as_weak());
+    store.on_set_game_list(move |list| {
+        let games = gamemode::parse_list(&list).join(", ");
+        p.borrow_mut().games = if games.is_empty() { gamemode::DEFAULT_GAMES.into() } else { games };
+        sv();
+        if let Some(ui) = weak.upgrade() {
+            ui.global::<Store>().set_game_list(p.borrow().games.clone().into());
+        }
+    });
+    let (p, sv, weak) = (prefs.clone(), save_prefs.clone(), ui.as_weak());
+    store.on_set_game_rate(move |i| {
+        let Some(r) = RATES.get(i as usize) else { return };
+        p.borrow_mut().game_rate_hz = r.0;
+        sv();
+        if let Some(ui) = weak.upgrade() {
+            ui.global::<Store>().set_game_rate_index(i);
+        }
+    });
+    let (p, sv, weak) = (prefs.clone(), save_prefs.clone(), ui.as_weak());
+    store.on_set_game_sensor(move |i| {
+        if i < 0 || i as usize >= SENSOR_MODES.len() {
+            return;
+        }
+        p.borrow_mut().game_sensor_mode = i as u8;
+        sv();
+        if let Some(ui) = weak.upgrade() {
+            ui.global::<Store>().set_game_sensor_mode(i);
+        }
+    });
+
     // ---- frameless window
     let weak = ui.as_weak();
     ui.on_minimize(move || {
@@ -628,6 +685,54 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             if let TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } = ev {
                 show_window(&ui);
             }
+        }
+    });
+
+    // game mode: every 5 s check the process list; switch settings while a game runs, put them back after
+    let (p, sv, st2, a, weak) = (prefs.clone(), save_prefs.clone(), st.clone(), apply.clone(), ui.as_weak());
+    let watcher = slint::Timer::default();
+    watcher.start(slint::TimerMode::Repeated, Duration::from_secs(5), move || {
+        let (enabled, restore, games, rate, mode) = {
+            let p = p.borrow();
+            (p.game_mode, p.restore, p.games.clone(), p.game_rate_hz, p.game_sensor_mode)
+        };
+        if !enabled && restore.is_none() {
+            return;
+        }
+        let game = if enabled { gamemode::running(&gamemode::parse_list(&games)) } else { None };
+        let set_active = |name: &str| {
+            if let Some(ui) = weak.upgrade() {
+                ui.global::<Store>().set_game_active(name.into());
+            }
+        };
+        match (game, restore) {
+            (Some(game), None) => {
+                let Some(current) = st2.borrow().last_state.clone() else { return };
+                p.borrow_mut().restore = Some((current.rate_hz, current.sensor_mode));
+                sv();
+                let name = game.trim_end_matches(".exe").to_string();
+                if current.rate_hz != rate {
+                    a(Change::Rate(rate), format!("{}: {}", tf("game mode: {}", &name), tf("polling {} Hz", rate)));
+                }
+                if current.sensor_mode != mode {
+                    a(Change::SensorMode(mode), format!("{}: {}", tf("game mode: {}", &name), t(SENSOR_MODES[mode as usize % 3])));
+                }
+                set_active(&name);
+            }
+            (None, Some((old_rate, old_mode))) => {
+                p.borrow_mut().restore = None;
+                sv();
+                if let Some(current) = st2.borrow().last_state.clone() {
+                    if current.rate_hz != old_rate && rate_code(old_rate).is_some() {
+                        a(Change::Rate(old_rate), format!("{}: {}", t("game closed"), tf("polling {} Hz", old_rate)));
+                    }
+                    if current.sensor_mode != old_mode {
+                        a(Change::SensorMode(old_mode), format!("{}: {}", t("game closed"), t(SENSOR_MODES[old_mode as usize % 3])));
+                    }
+                }
+                set_active("");
+            }
+            _ => {}
         }
     });
 

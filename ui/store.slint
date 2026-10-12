@@ -82,6 +82,11 @@ export global Store {
     in-out property <bool> start-in-tray;
     in-out property <bool> autostart;
     in-out property <[string]> languages;
+    in-out property <bool> game-mode;
+    in-out property <string> game-list;
+    in-out property <int> game-rate-index: -1;
+    in-out property <int> game-sensor-mode: -1;
+    in-out property <string> game-active;
     in-out property <int> language;
 
     callback refresh();
@@ -106,4 +111,8 @@ export global Store {
     callback set-start-in-tray(bool);
     callback set-autostart(bool);
     callback set-language(int);
+    callback set-game-mode(bool);
+    callback set-game-list(string);
+    callback set-game-rate(int);
+    callback set-game-sensor(int);
 }

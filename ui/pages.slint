@@ -1,5 +1,5 @@
 import { ScrollView } from "std-widgets.slint";
-import { Theme, Strong, Icon, HubButton, Segmented, VSegmented, Switch, HubSlider, NumberBox, TitleCard, ParamRow, PageTitle } from "components.slint";
+import { Theme, Strong, Icon, HubButton, Segmented, VSegmented, Switch, HubSlider, NumberBox, TitleCard, ParamRow, PageTitle, TextBox } from "components.slint";
 import { Store, DpiLevel, ButtonRow, MacroRow } from "store.slint";
 
 // ================= Buttons (Key Change Settings) =================
@@ -848,6 +848,41 @@ export component OtherPage inherits Rectangle {
                     }
                 }
                 ParamRow {
+                    label: @tr("Automatic game mode");
+                    hint: Store.game-active != "" ? @tr("Active now: {}", Store.game-active) : @tr("While a game below is open, uses the settings below and puts the previous ones back when it closes");
+                    Switch { checked: Store.game-mode; toggled(v) => { Store.set-game-mode(v); } }
+                }
+                if Store.game-mode: ParamRow {
+                    label: @tr("Games");
+                    hint: @tr("Program names separated by commas. Press Enter to save");
+                    TextBox {
+                        width: 360px;
+                        text: Store.game-list;
+                        placeholder: "VALORANT-Win64-Shipping.exe";
+                        submitted(v) => { Store.set-game-list(v); }
+                    }
+                }
+                if Store.game-mode: ParamRow {
+                    label: @tr("Polling rate in game");
+                    Segmented {
+                        width: 420px;
+                        font: 12px;
+                        items: Store.rate-names;
+                        selected: Store.game-rate-index;
+                        picked(i) => { Store.set-game-rate(i); }
+                    }
+                }
+                if Store.game-mode: ParamRow {
+                    label: @tr("Sensor mode in game");
+                    Segmented {
+                        width: 420px;
+                        font: 12px;
+                        items: Store.sensor-modes;
+                        selected: Store.game-sensor-mode;
+                        picked(i) => { Store.set-game-sensor(i); }
+                    }
+                }
+                ParamRow {
                     label: @tr("Receiver light");
                     hint: @tr("What the dongle light shows");
                     Segmented {
@@ -881,7 +916,7 @@ export component OtherPage inherits Rectangle {
                 }
                 ParamRow {
                     label: @tr("Identification");
-                    hint: "a9-panel 0.2";
+                    hint: "a9-panel 0.2.1";
                     Text { text: Store.model-id; color: Theme.k85; font-size: 14px; font-weight: 500; }
                 }
                 HorizontalLayout {

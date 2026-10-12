@@ -269,3 +269,24 @@ msgstr "Aguarde..."
 
 msgid "Reload everything from the mouse"
 msgstr "Recarregar tudo do mouse"
+
+msgid "Automatic game mode"
+msgstr "Modo jogo automático"
+
+msgid "Active now: {}"
+msgstr "Ativo agora: {}"
+
+msgid "While a game below is open, uses the settings below and puts the previous ones back when it closes"
+msgstr "Enquanto um jogo da lista estiver aberto, usa as configurações abaixo e volta as anteriores quando ele fecha"
+
+msgid "Games"
+msgstr "Jogos"
+
+msgid "Program names separated by commas. Press Enter to save"
+msgstr "Nomes dos programas separados por vírgula. Enter pra salvar"
+
+msgid "Polling rate in game"
+msgstr "Polling no jogo"
+
+msgid "Sensor mode in game"
+msgstr "Modo do sensor no jogo"

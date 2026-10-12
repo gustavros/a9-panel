@@ -73,6 +73,8 @@ const PT: &[(&str, &str)] = &[
     ("undo", "desfazer"),
     ("factory reset", "padrão de fábrica"),
     ("sensor mode", "modo do sensor"),
+    ("game mode: {}", "modo jogo: {}"),
+    ("game closed", "jogo fechado"),
     // tray
     ("Open panel", "Abrir painel"),
     ("Refresh now", "Atualizar agora"),
