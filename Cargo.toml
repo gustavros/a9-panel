@@ -7,11 +7,13 @@ license = "MIT"
 
 [dependencies]
 hidapi = "2"
-slint = "1"
+image = { version = "0.25.10", default-features = false, features = ["webp"] }
+miniz_oxide = "0.9.1"
+slint = { version = "~1.18", features = ["unstable-fontique-011"] }
 tray-icon = "0.26.1"
 
 [build-dependencies]
-slint-build = "1"
+slint-build = "~1.18"
 
 [profile.release]
 opt-level = "s"

@@ -1,5 +1,6 @@
 #![windows_subsystem = "windows"]
 
+mod assets;
 mod backup;
 mod device;
 mod i18n;
@@ -212,9 +213,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
+    // first run: fetch the mouse picture and the font (cached afterwards)
+    if let Err(e) = assets::ensure() {
+        eprintln!("assets: {e}");
+    }
+
     let ui = App::new()?;
     let _ = slint::select_bundled_translation(lang);
+    assets::register_font();
     let store = ui.global::<Store>();
+    if let Some(img) = assets::mouse_image() {
+        store.set_mouse_image(img);
+    }
     // closing only hides; the app stays in the tray
     ui.window().on_close_requested(|| slint::CloseRequestResponse::HideWindow);
 

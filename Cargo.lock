@@ -7,6 +7,8 @@ name = "a9-panel"
 version = "0.2.0"
 dependencies = [
  "hidapi",
+ "image",
+ "miniz_oxide 0.9.1",
  "slint",
  "slint-build",
  "tray-icon",
@@ -2493,6 +2495,7 @@ checksum = "85ab80394333c02fe689eaf900ab500fbd0c2213da414687ebf995a65d5a6104"
 dependencies = [
  "bytemuck",
  "byteorder-lite",
+ "image-webp",
  "moxcms",
  "num-traits",
  "png",
