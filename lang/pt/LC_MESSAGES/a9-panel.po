@@ -1,0 +1,271 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: pt\n"
+
+msgid "Key Settings"
+msgstr "Botões"
+
+msgid "Macro Settings"
+msgstr "Macros"
+
+msgid "DPI Settings"
+msgstr "Ajustes de DPI"
+
+msgid "Performance"
+msgstr "Desempenho"
+
+msgid "Parameters"
+msgstr "Parâmetros"
+
+msgid "Configuration"
+msgstr "Gerenciar configuração"
+
+msgid "Other Settings"
+msgstr "Outras configurações"
+
+msgid "Config {}"
+msgstr "Config {}"
+
+msgid "Mouse Configuration"
+msgstr "Configuração do mouse"
+
+msgid "a9-panel · unofficial ATK Hub port"
+msgstr "a9-panel · porte do ATK Hub"
+
+msgid "Loading data"
+msgstr "Carregando dados"
+
+msgid "Loading... move the mouse if it takes long"
+msgstr "Carregando... mexe o mouse se demorar"
+
+msgid "Restore default"
+msgstr "Restaurar padrão"
+
+msgid "Macro repeat"
+msgstr "Repetição da macro"
+
+msgid "wait"
+msgstr "espera"
+
+msgid "Macro list"
+msgstr "Lista de macros"
+
+msgid "Macro {}"
+msgstr "Macro {}"
+
+msgid "Macro"
+msgstr "Macro"
+
+msgid "Stop recording"
+msgstr "Parar gravação"
+
+msgid "Record keyboard"
+msgstr "Gravar teclado"
+
+msgid "Recording: press the keys, the time between them is recorded too."
+msgstr "Gravando: aperte as teclas, o tempo entre elas também é gravado."
+
+msgid "Record from the keyboard or add keys. Then click Save to mouse and pick the macro on a button."
+msgstr "Grave pelo teclado ou adicione teclas. Depois clique em Salvar no mouse e escolha a macro num botão."
+
+msgid "Add key"
+msgstr "Adicionar tecla"
+
+msgid "Empty macro"
+msgstr "Macro vazia"
+
+msgid "{} / 70 events"
+msgstr "{} / 70 eventos"
+
+msgid "Clear"
+msgstr "Limpar"
+
+msgid "Saving..."
+msgstr "Salvando..."
+
+msgid "Save to mouse"
+msgstr "Salvar no mouse"
+
+msgid "Separate X/Y axes"
+msgstr "Eixos X/Y separados"
+
+msgid "Press Enter or release the slider to apply"
+msgstr "Enter ou solte o controle pra aplicar"
+
+msgid "Add DPI level"
+msgstr "Adicionar nível de DPI"
+
+msgid "In this mode the sensor runs at low performance with long battery life, good for office work."
+msgstr "Neste modo o sensor fica em baixo desempenho, com bateria longa, bom pro uso no escritório."
+
+msgid "Competitive firmware: faster sensor response."
+msgstr "Firmware competitivo: resposta mais rápida do sensor."
+
+msgid "Competitive MAX firmware: the sensor at full speed, uses more battery."
+msgstr "Firmware competitivo MAX: o sensor no máximo, gasta mais bateria."
+
+msgid "Polling Rate"
+msgstr "Taxa de polling"
+
+msgid "Daily work"
+msgstr "Uso diário"
+
+msgid "Competitive gaming"
+msgstr "Jogo competitivo"
+
+msgid "Battery Life Estimate"
+msgstr "Estimativa de bateria"
+
+msgid "Reference time on a full charge with the current settings"
+msgstr "Tempo de referência com carga completa nas configurações atuais"
+
+msgid "Sensor Sampling Rate"
+msgstr "Taxa de amostragem do sensor"
+
+msgid "Parameter Settings"
+msgstr "Parâmetros"
+
+msgid "Lift-off distance (LOD)"
+msgstr "Altura de corte (LOD)"
+
+msgid "Height in mm at which the sensor stops tracking when you lift the mouse"
+msgstr "Altura em mm em que o sensor para de ler ao levantar o mouse"
+
+msgid "Button debounce"
+msgstr "Debounce dos botões"
+
+msgid "Time to ignore false double clicks, in milliseconds"
+msgstr "Tempo pra ignorar clique duplo falso, em milissegundos"
+
+msgid "Aligns sensor reports with the polling"
+msgstr "Alinha o envio do sensor com o polling"
+
+msgid "Angle snapping"
+msgstr "Correção de linha reta"
+
+msgid "Straightens nearly straight movements"
+msgstr "Endireita movimentos quase retos"
+
+msgid "Ripple control"
+msgstr "Controle de ondulação"
+
+msgid "Smooths jitter at high DPI"
+msgstr "Suaviza tremidas em DPI alto"
+
+msgid "Long distance mode"
+msgstr "Modo longa distância"
+
+msgid "Improves the wireless signal far from the receiver"
+msgstr "Melhora o sinal sem fio longe do receptor"
+
+msgid "Sleep time"
+msgstr "Tempo pra dormir"
+
+msgid "An idle mouse goes into power saving, in seconds"
+msgstr "Mouse parado entra em economia de energia, em segundos"
+
+msgid "Sensor sleeps when idle"
+msgstr "Sensor dorme parado"
+
+msgid "Turns the sensor off after a while without use"
+msgstr "Desliga o sensor depois de um tempo sem uso"
+
+msgid "Time until the sensor sleeps"
+msgstr "Tempo até o sensor dormir"
+
+msgid "In seconds"
+msgstr "Em segundos"
+
+msgid "Configuration Management"
+msgstr "Gerenciar configuração"
+
+msgid "Active config file"
+msgstr "Arquivo de configuração ativo"
+
+msgid "Each profile keeps its own DPI, polling and buttons"
+msgstr "Cada perfil guarda DPI, polling e botões separados"
+
+msgid "Undo last change"
+msgstr "Desfazer última mudança"
+
+msgid "{} changes saved in the history"
+msgstr "{} mudanças guardadas no histórico"
+
+msgid "Nothing in the history yet"
+msgstr "Nada no histórico ainda"
+
+msgid "Undo"
+msgstr "Desfazer"
+
+msgid "Write history"
+msgstr "Histórico de gravações"
+
+msgid "Before every write the app keeps the old value"
+msgstr "Antes de cada gravação o app guarda o valor antigo"
+
+msgid "Open folder"
+msgstr "Abrir pasta"
+
+msgid "Restore factory defaults"
+msgstr "Restaurar padrão de fábrica"
+
+msgid "Are you sure? Click Confirm. Undo can still bring it back."
+msgstr "Tem certeza? Clique em Confirmar. O desfazer ainda consegue voltar."
+
+msgid "Resets DPI, polling, buttons and parameters"
+msgstr "Volta DPI, polling, botões e parâmetros ao original"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Confirm"
+msgstr "Confirmar"
+
+msgid "Restore"
+msgstr "Restaurar"
+
+msgid "Language"
+msgstr "Idioma"
+
+msgid "Language of this app"
+msgstr "Idioma deste app"
+
+msgid "Receiver light"
+msgstr "Luz do receptor"
+
+msgid "What the dongle light shows"
+msgstr "O que a luz do dongle mostra"
+
+msgid "Start with Windows"
+msgstr "Iniciar com o Windows"
+
+msgid "Opens hidden in the tray when you turn on the PC"
+msgstr "Abre escondido na bandeja quando você liga o PC"
+
+msgid "Start in the tray"
+msgstr "Abrir direto na bandeja"
+
+msgid "Does not show the window when the app opens"
+msgstr "Não mostra a janela ao abrir o app"
+
+msgid "Battery"
+msgstr "Bateria"
+
+msgid "{} · charging"
+msgstr "{} · carregando"
+
+msgid "Mouse firmware"
+msgstr "Firmware do mouse"
+
+msgid "Receiver {}"
+msgstr "Receptor {}"
+
+msgid "Identification"
+msgstr "Identificação"
+
+msgid "Please wait..."
+msgstr "Aguarde..."
+
+msgid "Reload everything from the mouse"
+msgstr "Recarregar tudo do mouse"
