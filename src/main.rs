@@ -197,6 +197,17 @@ struct Ui {
     sticky: bool,
 }
 
+/// Takes a named mutex that lives until the process exits; true if another copy already holds it.
+fn already_running() -> bool {
+    use windows_sys::Win32::Foundation::{GetLastError, ERROR_ALREADY_EXISTS};
+    use windows_sys::Win32::System::Threading::CreateMutexW;
+    let name: Vec<u16> = "Local\\a9-panel\0".encode_utf16().collect();
+    unsafe {
+        CreateMutexW(std::ptr::null(), 0, name.as_ptr());
+        GetLastError() == ERROR_ALREADY_EXISTS
+    }
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let prefs = Rc::new(RefCell::new(settings::load()));
     let lang = if prefs.borrow().language.is_empty() { i18n::system() } else { i18n::current_from(&prefs.borrow().language) };
@@ -211,6 +222,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
         let _ = std::fs::create_dir_all(backup::dir());
         std::fs::write(backup::dir().join("dump.txt"), out.unwrap_or_else(|e| format!("error: {e}\n")))?;
+        return Ok(());
+    }
+
+    // two copies would fight over the receiver and swallow each other's replies
+    if !std::env::args().any(|a| a.starts_with("--shot")) && already_running() {
         return Ok(());
     }
 
