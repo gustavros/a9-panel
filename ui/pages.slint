@@ -1,6 +1,6 @@
 import { ScrollView } from "std-widgets.slint";
 import { Theme, Strong, Icon, HubButton, Segmented, VSegmented, Switch, HubSlider, NumberBox, TitleCard, ParamRow, PageTitle, TextBox } from "components.slint";
-import { Store, DpiLevel, ButtonRow, MacroRow } from "store.slint";
+import { Store, DpiLevel, ButtonRow, MacroRow, ProgramRow } from "store.slint";
 
 // ================= Buttons (Key Change Settings) =================
 
@@ -854,12 +854,101 @@ export component OtherPage inherits Rectangle {
                 }
                 if Store.game-mode: ParamRow {
                     label: @tr("Games");
-                    hint: @tr("Program names separated by commas. Press Enter to save");
-                    TextBox {
-                        width: 360px;
-                        text: Store.game-list;
-                        placeholder: "VALORANT-Win64-Shipping.exe";
-                        submitted(v) => { Store.set-game-list(v); }
+                    hint: @tr("Open the game, click Add game and choose it from the list");
+                    VerticalLayout {
+                        spacing: 8px;
+                        for g[i] in Store.game-items: Rectangle {
+                            width: 360px;
+                            height: 32px;
+                            border-radius: 6px;
+                            background: Theme.k08;
+                            Text {
+                                x: 12px;
+                                width: parent.width - 48px;
+                                text: g;
+                                color: Theme.k85;
+                                font-size: 14px;
+                                vertical-alignment: center;
+                                overflow: elide;
+                            }
+                            Icon {
+                                x: parent.width - 26px;
+                                y: (parent.height - self.height) / 2;
+                                width: 14px;
+                                height: 14px;
+                                source: @image-url("assets/icons/close.svg");
+                                colorize: Theme.k60;
+                            }
+                            TouchArea {
+                                x: parent.width - 36px;
+                                width: 36px;
+                                mouse-cursor: pointer;
+                                clicked => { Store.remove-game(i); }
+                            }
+                        }
+                        add := HubButton {
+                            width: 360px;
+                            label: @tr("Add game");
+                            has-icon: true;
+                            icon: @image-url("assets/icons/plus.svg");
+                            clicked => {
+                                Store.list-programs();
+                                programs.show();
+                            }
+                        }
+                        programs := PopupWindow {
+                            x: 0px;
+                            y: add.y + add.height + 4px;
+                            width: 360px;
+                            height: Store.open-programs.length == 0 ? 44px : min(252px, Store.open-programs.length * 36px + 8px);
+                            Rectangle {
+                                background: #ffffff;
+                                border-radius: 8px;
+                                border-width: 1px;
+                                border-color: Theme.k12;
+                                if Store.open-programs.length == 0: Text {
+                                    text: @tr("No other open programs found");
+                                    color: Theme.k60;
+                                    font-size: 13px;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
+                                Flickable {
+                                    content-height: Store.open-programs.length * 36px + 8px;
+                                    VerticalLayout {
+                                        padding: 4px;
+                                        for p[i] in Store.open-programs: Rectangle {
+                                            height: 36px;
+                                            border-radius: 6px;
+                                            background: row-ta.has-hover ? Theme.k08 : transparent;
+                                            HorizontalLayout {
+                                                padding-left: 10px;
+                                                padding-right: 10px;
+                                                spacing: 10px;
+                                                alignment: start;
+                                                if p.has-icon: Image {
+                                                    source: p.icon;
+                                                    width: 22px;
+                                                    height: 22px;
+                                                    y: (parent.height - self.height) / 2;
+                                                }
+                                                Text {
+                                                    text: p.name;
+                                                    color: Theme.k85;
+                                                    font-size: 14px;
+                                                    vertical-alignment: center;
+                                                    overflow: elide;
+                                                }
+                                            }
+                                            row-ta := TouchArea {
+                                                mouse-cursor: pointer;
+                                                clicked => { Store.add-game(i); }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 if Store.game-mode: ParamRow {

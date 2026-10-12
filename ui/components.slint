@@ -317,8 +317,9 @@ export component ParamRow inherits Rectangle {
     in property <string> hint;
     background: Theme.k04;
     border-radius: 8px;
-    min-height: 68px;
-    HorizontalLayout {
+    // grows with the content (a row can hold several lines of controls)
+    min-height: max(68px, body.min-height);
+    body := HorizontalLayout {
         padding-left: 24px;
         padding-right: 24px;
         padding-top: 14px;

@@ -282,11 +282,17 @@ msgstr "Enquanto um jogo da lista estiver aberto, usa as configurações abaixo 
 msgid "Games"
 msgstr "Jogos"
 
-msgid "Program names separated by commas. Press Enter to save"
-msgstr "Nomes dos programas separados por vírgula. Enter pra salvar"
-
 msgid "Polling rate in game"
 msgstr "Polling no jogo"
 
 msgid "Sensor mode in game"
 msgstr "Modo do sensor no jogo"
+
+msgid "Open the game, click Add game and choose it from the list"
+msgstr "Abra o jogo, clique em Adicionar jogo e escolha ele na lista"
+
+msgid "Add game"
+msgstr "Adicionar jogo"
+
+msgid "No other open programs found"
+msgstr "Nenhum outro programa aberto encontrado"

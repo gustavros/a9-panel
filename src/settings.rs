@@ -48,7 +48,7 @@ pub fn load() -> Settings {
         start_in_tray: get("start_in_tray").as_deref() == Some("1"),
         language: get("language").unwrap_or_default(),
         game_mode: get("game_mode").as_deref() == Some("1"),
-        games: get("games").filter(|g| !g.trim().is_empty()).unwrap_or(d.games),
+        games: get("games").unwrap_or(d.games),
         game_rate_hz: get("game_rate").and_then(|v| v.parse().ok()).unwrap_or(d.game_rate_hz),
         game_sensor_mode: get("game_sensor").and_then(|v| v.parse().ok()).unwrap_or(d.game_sensor_mode),
         restore: get("restore").and_then(|v| {

@@ -14,7 +14,7 @@ mod tray;
 use i18n::{t, tf};
 use model::{Change, State};
 use protocol::*;
-use slint::{ModelRc, SharedString, VecModel};
+use slint::{Model, ModelRc, SharedString, VecModel};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::mpsc;
@@ -258,7 +258,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     {
         let p = prefs.borrow();
         store.set_game_mode(p.game_mode);
-        store.set_game_list(p.games.clone().into());
+        store.set_game_items(strings(gamemode::parse_list(&p.games)));
         store.set_game_rate_index(RATES.iter().position(|r| r.0 == p.game_rate_hz).map_or(-1, |i| i as i32));
         store.set_game_sensor_mode(p.game_sensor_mode as i32);
     }
@@ -503,13 +503,47 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
     let (p, sv, weak) = (prefs.clone(), save_prefs.clone(), ui.as_weak());
-    store.on_set_game_list(move |list| {
-        let games = gamemode::parse_list(&list).join(", ");
-        p.borrow_mut().games = if games.is_empty() { gamemode::DEFAULT_GAMES.into() } else { games };
+    store.on_remove_game(move |i| {
+        let mut games = gamemode::parse_list(&p.borrow().games);
+        if i < 0 || i as usize >= games.len() {
+            return;
+        }
+        games.remove(i as usize);
+        p.borrow_mut().games = games.join(", ");
         sv();
         if let Some(ui) = weak.upgrade() {
-            ui.global::<Store>().set_game_list(p.borrow().games.clone().into());
+            ui.global::<Store>().set_game_items(strings(games));
         }
+    });
+    let (p, weak) = (prefs.clone(), ui.as_weak());
+    store.on_list_programs(move || {
+        let Some(ui) = weak.upgrade() else { return };
+        let have = gamemode::parse_list(&p.borrow().games);
+        let rows: Vec<ProgramRow> = gamemode::open_programs()
+            .into_iter()
+            .filter(|g| !have.iter().any(|h| h.eq_ignore_ascii_case(&g.name)))
+            .map(|g| {
+                let icon = g.icon.map(|(w, h, px)| {
+                    slint::Image::from_rgba8(slint::SharedPixelBuffer::<slint::Rgba8Pixel>::clone_from_slice(&px, w, h))
+                });
+                ProgramRow { name: g.name.into(), has_icon: icon.is_some(), icon: icon.unwrap_or_default() }
+            })
+            .collect();
+        ui.global::<Store>().set_open_programs(ModelRc::new(VecModel::from(rows)));
+    });
+    let (p, sv, weak) = (prefs.clone(), save_prefs.clone(), ui.as_weak());
+    store.on_add_game(move |i| {
+        let Some(ui) = weak.upgrade() else { return };
+        let st = ui.global::<Store>();
+        let Some(row) = st.get_open_programs().row_data(i as usize) else { return };
+        let mut games = gamemode::parse_list(&p.borrow().games);
+        if !games.iter().any(|g| g.eq_ignore_ascii_case(&row.name)) {
+            games.push(row.name.to_string());
+        }
+        p.borrow_mut().games = games.join(", ");
+        sv();
+        st.set_game_items(strings(games));
+        st.set_open_programs(ModelRc::new(VecModel::from(Vec::<ProgramRow>::new())));
     });
     let (p, sv, weak) = (prefs.clone(), save_prefs.clone(), ui.as_weak());
     store.on_set_game_rate(move |i| {

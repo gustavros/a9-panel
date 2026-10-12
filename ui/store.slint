@@ -12,6 +12,12 @@ export struct ButtonRow {
     macro-mode: int,  // index into Store.macro-modes
 }
 
+export struct ProgramRow {
+    name: string,
+    icon: image,
+    has-icon: bool,
+}
+
 export struct MacroRow {
     text: string,
     delay: int,
@@ -83,10 +89,11 @@ export global Store {
     in-out property <bool> autostart;
     in-out property <[string]> languages;
     in-out property <bool> game-mode;
-    in-out property <string> game-list;
+    in-out property <[string]> game-items;
     in-out property <int> game-rate-index: -1;
     in-out property <int> game-sensor-mode: -1;
     in-out property <string> game-active;
+    in-out property <[ProgramRow]> open-programs;
     in-out property <int> language;
 
     callback refresh();
@@ -112,7 +119,9 @@ export global Store {
     callback set-autostart(bool);
     callback set-language(int);
     callback set-game-mode(bool);
-    callback set-game-list(string);
+    callback remove-game(int);
+    callback list-programs();
+    callback add-game(int);
     callback set-game-rate(int);
     callback set-game-sensor(int);
 }
