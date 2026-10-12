@@ -1,0 +1,4 @@
+target/
+# third-party assets: run scripts/fetch-assets.ps1
+ui/assets/mouse.png
+ui/assets/OPPOSans.ttf
